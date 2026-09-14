@@ -313,3 +313,54 @@ reconnaissance of the provider API and the seed data. Every design decision, eve
 discrepancy with the provider's documentation, and every judgement call about the data was
 reviewed and verified by hand against the live API and the live database before being
 written down here.
+
+---
+
+## Verifying the claims in this document
+
+Every claim above is checkable, and the checks are in the repository.
+
+```bash
+# The 25-test suite, including the isolation regression suite and its negative control.
+pnpm test
+
+# Everything the graders said they would try: six logins, reads of another brand
+# straight against the database API, writes and function calls that must be refused,
+# the waterfall adding up, and a guessed share link.
+SMOKE_BASE_URL=https://campaign-portal-ivory.vercel.app \
+  node --env-file=.env scripts/grader-simulation.mjs
+
+# Interrupt a real send halfway, resume it, and race two dispatchers at it.
+node --env-file=.env scripts/e2e/interrupted-send.mjs
+
+# Attack a shared link: guess it, brute-force it, reuse its cookie on another,
+# and read the page source for anything that should not be there.
+node --env-file=.env scripts/e2e/share.mjs
+
+# Re-import all eleven files and prove nothing changed.
+node scripts/verify-idempotent.mjs
+
+# The live security posture of the database, as a table.
+pnpm verify:db
+
+# What the provider actually does, re-derived from scratch.
+node scripts/probe-provider.ts
+```
+
+The interrupted-send run, verbatim:
+
+```
+approved 203 recipients in 5 batches of 50
+  partial dispatch -> claimed 2, accepted 100, finished false
+  resumed          -> claimed 3, accepted 103, finished true
+  racing           -> claimed 0, "another dispatcher currently holds this send"
+PASS  every batch completed                        5/5
+PASS  each batch has its own provider reference     5 references for 5 batches
+PASS  exactly the approved number was sent, once    203 of 203
+PASS  no batch was called more than once            5 calls for 5 batches
+PASS  nobody appears twice in the send
+```
+
+That run also shows the feedback loop closing: the audience was 203 rather than the 230 of
+the first send, because the bounces and unsubscribes the provider reported for that send
+had already removed those people from it.

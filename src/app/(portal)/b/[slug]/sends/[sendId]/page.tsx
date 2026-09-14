@@ -36,6 +36,8 @@ export default async function SendPage({ params }: {
 
   const campaign = send.campaigns as unknown as { id: string; name: string; external_id: string; channel: string };
   const chunkRows = (chunks ?? []) as ChunkRow[];
+  // provider_status is derived from the timestamps by the database, so this breakdown
+  // and the totals above cannot disagree.
   const tally = (outcomes ?? []).reduce<Record<string, number>>((a, r) => {
     const k = r.provider_status ?? 'not yet sent';
     a[k] = (a[k] ?? 0) + 1; return a;

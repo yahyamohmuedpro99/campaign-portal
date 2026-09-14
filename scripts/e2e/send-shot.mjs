@@ -1,0 +1,14 @@
+import { chromium } from 'playwright';
+const BASE = process.env.SMOKE_BASE_URL ?? 'http://localhost:3000';
+const b = await chromium.launch();
+const ctx = await b.newContext({ viewport: { width: 1400, height: 1400 }, deviceScaleFactor: 2 });
+const p = await ctx.newPage();
+await p.goto(`${BASE}/login`);
+await p.fill('#email', 'owner@marrakech.vg-eval.test');
+await p.fill('#password', process.env.SEED_PASSWORD_MARRAKECH_OWNER);
+await Promise.all([p.waitForURL(/dashboard/, { timeout: 60000 }), p.click('button[type=submit]')]);
+await p.goto(`${BASE}/b/marrakech/sends/a9a6207a-ae90-4572-a57c-91e2e4627dd3`, { waitUntil: 'networkidle' });
+await p.waitForTimeout(1200);
+await p.screenshot({ path: '.scratch/ui-send.png', fullPage: true });
+console.log('send page captured');
+await b.close();

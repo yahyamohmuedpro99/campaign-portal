@@ -64,7 +64,7 @@ jobs:
     needs: verify
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     concurrency:
       group: deploy-production
       cancel-in-progress: false
@@ -106,7 +106,9 @@ jobs:
           vercel() { npx --yes "vercel@$VERCEL_CLI_VERSION" "$@" --token "$VERCEL_TOKEN" --yes; }
           timeout 120 bash -c "$(declare -f vercel); vercel pull --environment=production"
           timeout 600 bash -c "$(declare -f vercel); vercel build --prod"
-          timeout 300 bash -c "$(declare -f vercel); vercel deploy --prebuilt --prod" | tee deployment-url.txt
+          # Vercel still runs a remote step for a prebuilt upload; it took just under
+          # five minutes, so the ceiling is set well clear of that rather than just above it.
+          timeout 900 bash -c "$(declare -f vercel); vercel deploy --prebuilt --prod" | tee deployment-url.txt
           echo "Deployed: $(tail -1 deployment-url.txt)" >> "$GITHUB_STEP_SUMMARY"
 
       # A deployment that builds but cannot serve a page is not a deployment.
