@@ -89,6 +89,20 @@ for (const fn of ['preview_campaign_send', 'approve_campaign_send', 'brand_total
   check(`a stranger cannot call ${fn}`, error !== null);
 }
 
+// The portal is six accounts, and that is a setting on the auth server rather than a line
+// of application code — so it is checked here rather than assumed. The reason for the
+// refusal is checked too: a rejection for a malformed address would otherwise let this
+// pass on a project that had been left open.
+const settings = await fetch(`${URL_}/auth/v1/settings`, { headers: { apikey: ANON } }).then((r) => r.json());
+check('the project refuses new sign-ups', settings?.disable_signup === true,
+      settings?.disable_signup === true ? 'invite only' : 'ANYONE CAN SIGN UP');
+const selfServe = await anon.auth.signUp({
+  email: 'adam.wanjiru@sheridanpartners.co.ke', password: `Rj-${crypto.randomUUID()}` });
+check('a stranger cannot create themselves an account',
+      selfServe.error !== null && !selfServe.data?.user
+        && /signup_disabled|403|429|rate/i.test(`${selfServe.error?.code ?? ''} ${selfServe.error?.status ?? ''}`),
+      selfServe.error?.code ?? 'an account was created');
+
 const { data: kileleCampaign } = await owner.from('campaigns').select('id').limit(1).single();
 const analystPreview = await clients['Kilele analyst'].c
   .rpc('preview_campaign_send', { p_campaign_id: kileleCampaign.id });

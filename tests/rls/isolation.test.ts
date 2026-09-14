@@ -8,15 +8,16 @@
  *   R1/R2  A table in `public` without RLS, or with RLS but no policy, fails the suite.
  *          These are structural and deterministic: they catch a table added months from
  *          now by someone who never reads this file.
- *   R9-R18 Behavioural checks through PostgREST with real user sessions, which is how
+ *   R9-R19 Behavioural checks through PostgREST with real user sessions, which is how
  *          the graders said they would come at it.
  *   R16    A negative control that switches RLS off inside a transaction and asserts the
  *          leak appears, then rolls back. If this one ever passes with RLS disabled,
  *          isolation is coming from somewhere other than the database and the other
  *          tests are worth nothing.
+ *   R19    The door in front of all of it: nobody can create themselves an account.
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { signIn, anonClient, db, TENANT_EXEMPT, DEFAULT_PREDICATE, TIGHTER_PREDICATE } from '../helpers';
+import { signIn, anonClient, db, URL_, ANON, TENANT_EXEMPT, DEFAULT_PREDICATE, TIGHTER_PREDICATE } from '../helpers';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type pg from 'pg';
 
@@ -256,6 +257,35 @@ describe('behaviour through the API, as a grader would test it', () => {
 
     const withoutSecret = await kileleOwner.from('campaign_shares').select('id, campaign_id, created_at');
     expect(withoutSecret.error).toBeNull();
+  });
+
+  it('R19: a stranger cannot give themselves an account', async () => {
+    // Row-level security is what stops an outsider reading anything, and R10/R12 prove it.
+    // This is the door in front of it: the portal is six accounts, and that is a setting on
+    // the auth server, not a line of application code. It was enabled by hand once and
+    // silently reverted, and nothing noticed, because nothing checked. Now something does.
+    //
+    // Declared in supabase/config.toml, so it is re-applied on deploy rather than clicked.
+    const settings = await fetch(`${URL_}/auth/v1/settings`, { headers: { apikey: ANON } })
+      .then((r) => r.json());
+    expect(settings?.disable_signup, 'the project must refuse new sign-ups').toBe(true);
+
+    // And then the behaviour, because a setting that does not bite is not a guarantee.
+    const { data, error } = await anonClient().auth.signUp({
+      email: 'adam.wanjiru@sheridanpartners.co.ke',
+      // Never a real credential in a file: this one exists for the length of a refusal.
+      password: `Rj-${crypto.randomUUID()}`,
+    });
+    expect(error, 'creating an account must be refused').not.toBeNull();
+    expect(data?.user, 'and no account may come into existence').toBeFalsy();
+
+    // Refused *because the portal is invite-only* — the auth server declines to sign anyone
+    // up, or the before-user-created hook finds no brand membership for the address, or it
+    // throttled us before it considered either. Checking the reason is the point: a refusal
+    // for a malformed address would let this keep passing against a wide-open project.
+    const refusal = `${error!.code ?? ''} ${error!.status ?? ''}`;
+    expect(/signup_disabled|403|429|rate/i.test(refusal),
+      `refused for the wrong reason: ${refusal}`).toBe(true);
   });
 });
 

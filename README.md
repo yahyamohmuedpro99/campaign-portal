@@ -60,7 +60,7 @@ session proxy decides where people land; it does not decide what they can read.
 
 ### The test that fails if someone removes it
 
-**[`tests/rls/isolation.test.ts`](tests/rls/isolation.test.ts)** — 19 checks, run on every
+**[`tests/rls/isolation.test.ts`](tests/rls/isolation.test.ts)** — 20 checks, run on every
 push.
 
 - **R1** fails if any table in `public` has row-level security switched off.
@@ -78,9 +78,40 @@ R16 runs the `ALTER` and the read on the same connection, using role and JWT-cla
 impersonation. Splitting them across two connections would block on the lock the `ALTER`
 takes and then observe row-level security restored, passing for entirely the wrong reason.
 
-The rest (R4–R18) come at it the way the graders said they would: real sessions against
+The rest (R4–R19) come at it the way the graders said they would: real sessions against
 the database API, asking for another brand's rows, attempting writes, calling functions as
 an anonymous visitor.
+
+### The door in front of it
+
+Row-level security decides what a signed-in account can read. A separate question is who
+gets to be a signed-in account at all, and that one is not answered by any line of code in
+this repository — it is a setting on the auth server.
+
+It was set by hand, early on. It did not stay set. Nothing noticed, because nothing
+checked: the claim that sign-ups were closed existed only in a code comment, and a comment
+cannot fail. A stranger could create an account. They would have read nothing, because
+every policy is keyed to a brand membership they would not have had, and they would have
+landed on `/no-access` — but "they can see nothing" is a weaker promise than "they cannot
+get in", and the interface says the stronger one.
+
+So the setting stopped being something a person clicks:
+
+- **[`supabase/config.toml`](supabase/config.toml)** declares it, and
+  `supabase config push` applies it. `supabase config diff` shows what would change first.
+  Only properties the file names are touched.
+- **`enable_signup = false`**, plus a `before_user_created` hook
+  ([`restrict_signup_to_invited`](supabase/migrations/20260914100000_access_control.sql))
+  that refuses any address holding no brand membership. Two independent controls.
+- **R19** in the isolation suite tries to sign itself up on every push, and fails if it
+  succeeds. It checks *why* it was refused, so that a rejection for a malformed address
+  cannot let it pass against a project whose doors were open.
+- [`scripts/e2e/google-check.mjs`](scripts/e2e/google-check.mjs) asserts the same thing
+  against production and exits non-zero.
+
+The same push fixed something that had not broken yet: the project's site URL was still
+`http://localhost:3000` and its redirect allow-list was empty, so the first Google sign-in
+on the live site would have handed the browser to whoever ran it, on their own laptop.
 
 ---
 
@@ -321,7 +352,7 @@ written down here.
 Every claim above is checkable, and the checks are in the repository.
 
 ```bash
-# The 25-test suite, including the isolation regression suite and its negative control.
+# The 26-test suite, including the isolation regression suite and its negative control.
 pnpm test
 
 # Everything the graders said they would try: six logins, reads of another brand

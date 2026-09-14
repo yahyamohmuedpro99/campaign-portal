@@ -1,0 +1,42 @@
+# Declared configuration for the hosted project.
+#
+# Only the properties written here are pushed; everything else the dashboard holds is left
+# alone (`supabase config push`, previewed with `supabase config diff`). The file is
+# deliberately minimal for that reason — a fuller template would quietly overwrite hosted
+# settings with its own defaults.
+#
+# No secrets live here. Anything that needs one uses env(NAME), read from .env.
+
+project_id = "zevcpyxwwzaeuvegjtua"
+
+[auth]
+# This portal is six accounts. Nobody signs themselves up.
+enable_signup = false
+
+# Where the auth server is allowed to send a browser back to after a Google round trip.
+# Anything not on this list is refused and falls back to site_url, so leaving it empty is
+# how a sign-in on the live site ends up on someone's laptop instead.
+site_url = "https://campaign-portal-ivory.vercel.app"
+additional_redirect_urls = [
+  "https://campaign-portal-ivory.vercel.app/auth/callback",
+  "http://localhost:3000/auth/callback",
+]
+
+[auth.hook.before_user_created]
+# Refuses any address that does not already hold a brand membership, so an unknown Google
+# account is turned away by the auth server rather than becoming a user who then finds an
+# empty portal. Defined in supabase/migrations/20260914100000_access_control.sql.
+enabled = true
+uri = "pg-functions://postgres/public/restrict_signup_to_invited"
+
+# Google sign-in.
+#
+# Uncomment once GOOGLE_CLIENT_ID and GOOGLE_SECRET are in .env, then `supabase config
+# push`. The secrets are read from .env at push time and are never written into this file,
+# which is committed. Creating the OAuth client is the one step that has to happen in a web
+# console — see docs/google-sign-in-setup.md.
+#
+# [auth.external.google]
+# enabled = true
+# client_id = "env(GOOGLE_CLIENT_ID)"
+# secret = "env(GOOGLE_SECRET)"

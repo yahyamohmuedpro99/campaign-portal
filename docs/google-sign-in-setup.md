@@ -1,12 +1,32 @@
 # Enabling Google sign-in
 
-Two steps, both in web consoles, about ten minutes. Everything on the application side is
-already built and deployed: the button, the callback, the account linking, the refusal
-path for accounts that are not one of the six, and the `/no-access` page they land on.
+One step, in one web console, about five minutes. Everything else is already done.
 
 Use the **personal** Google account, `yahyamohmuedpro99@gmail.com`, not a work account.
 
-## 1. Create the OAuth client (Google Cloud Console)
+## What is already in place
+
+The application side is built and deployed: the button, the callback, the account linking,
+the refusal path for accounts that are not one of the six, and the `/no-access` page.
+
+The project's own auth settings are **declared in `supabase/config.toml`** and applied with
+`supabase config push`, rather than clicked into a dashboard. That is deliberate. The
+invite-only setting was switched on by hand once, silently reverted, and nobody noticed for
+a day because nothing in the repo checked it. Four properties now live in the file:
+
+| Setting | Value | Why |
+|---|---|---|
+| `enable_signup` | `false` | Nobody signs themselves up. This portal is six accounts. |
+| `hook.before_user_created` | `restrict_signup_to_invited` | Refuses any address with no brand membership, so an unknown Google account is turned away by the auth server rather than becoming a user who then finds an empty portal. |
+| `site_url` | the live URL | It was `http://localhost:3000`. Google sign-in would have sent the grader to their own laptop. |
+| `additional_redirect_urls` | live + localhost callbacks | It was empty, so every `redirectTo` would have been refused and fallen back to `site_url`. |
+
+`supabase config diff` shows what the file would change before it changes it; everything
+not named in the file is left alone.
+
+## The one manual step: create the OAuth client
+
+Google will not let an API create an OAuth client for you, so this part is by hand.
 
 1. Sign in at https://console.cloud.google.com as `yahyamohmuedpro99@gmail.com`.
 2. Create a project, for example `campaign-portal`.
@@ -16,9 +36,9 @@ Use the **personal** Google account, `yahyamohmuedpro99@gmail.com`, not a work a
    - User support email and developer contact: `yahyamohmuedpro99@gmail.com`
    - Scopes: leave the defaults. Only `email`, `profile` and `openid` are used, all
      non-sensitive, so no Google verification is needed.
-   - **Publish the app.** While it is in testing, only accounts added to the test-user list
-     can sign in, which would block `yahya.mo.asr@gmail.com`. Publishing avoids that. If
-     you would rather leave it in testing, add both addresses as test users instead.
+   - **Publish the app.** While it is in testing, only accounts on the test-user list can
+     sign in, which would block `yahya.mo.asr@gmail.com`. Publishing avoids that. If you
+     would rather leave it in testing, add both addresses as test users instead.
 4. **APIs & Services → Credentials → Create credentials → OAuth client ID**
    - Application type: **Web application**
    - Name: `Campaign Portal`
@@ -30,46 +50,38 @@ Use the **personal** Google account, `yahyamohmuedpro99@gmail.com`, not a work a
 
    - Create, then copy the **Client ID** and **Client secret**.
 
-## 2. Turn the provider on (Supabase dashboard)
+## Then two lines and one command
 
-1. Open https://supabase.com/dashboard/project/zevcpyxwwzaeuvegjtua/auth/providers
-2. Find **Google**, enable it, paste the Client ID and Client secret, and save.
-3. Go to **Authentication → URL Configuration** and set:
-   - Site URL: `https://campaign-portal-ivory.vercel.app`
-   - Additional redirect URLs:
-     ```
-     https://campaign-portal-ivory.vercel.app/auth/callback
-     http://localhost:3000/auth/callback
-     ```
+Put the two values in `.env` — never anywhere else, and never in a commit:
 
-### Optional, and recommended
+```
+GOOGLE_CLIENT_ID=…apps.googleusercontent.com
+GOOGLE_SECRET=…
+```
 
-On the same **Authentication** section:
+Uncomment the `[auth.external.google]` block at the bottom of `supabase/config.toml` and:
 
-- **Sign In / Providers → Auth Hooks → Before User Created**: choose the Postgres function
-  `public.restrict_signup_to_invited`. It is already created and already granted to the
-  auth admin role. It refuses any address that does not already hold a brand membership,
-  which is what turns an unknown Google account into a clean refusal rather than a new
-  account that then finds an empty portal.
-- **Sign In / Providers → Allow new users to sign up**: turn off. Google sign-in keeps
-  working for the six, because the auth server links a Google identity to an existing user
-  with the same verified address and only the create-a-new-user branch is refused.
+```bash
+supabase config diff      # read what it is about to change
+supabase config push
+```
 
-Neither is load-bearing on its own. An account with no membership can already read nothing,
-because every row-level security policy is keyed to a membership it does not have, and the
-callback signs such an account straight back out.
+The secrets are read from `.env` at push time. They are not written into `config.toml`,
+which is committed.
 
-## 3. Check it
+## Check it
 
 ```bash
 node --env-file=.env scripts/e2e/google-check.mjs
 ```
 
-It reports whether Supabase is advertising Google as a provider and whether the
-authorisation URL it generates is well formed. The sign-in itself needs a human at a
-browser: open the live site, press **Continue with Google**, and pick
-`yahyamohmuedpro99@gmail.com`. You should land on the Kilele dashboard. Repeat with
-`yahya.mo.asr@gmail.com` and you should land in the same place as an analyst, without a
-Send button.
+It asserts rather than reports, and exits non-zero if anything is wrong: sign-ups refused,
+a stranger genuinely turned away, the provider enabled, the authorisation URL pointing at
+Google, and — the one that would have caught the `site_url` problem — that Google will hand
+the browser back to *this* app rather than somewhere else.
 
-Then try it with any other Google account. It should be refused and land on `/no-access`.
+The sign-in itself needs a human at a browser: open the live site, press **Continue with
+Google**, and pick `yahyamohmuedpro99@gmail.com`. You should land on the Kilele dashboard.
+Repeat with `yahya.mo.asr@gmail.com`: same place, as an analyst, without a Send button.
+
+Then try any other Google account. It should be refused before an account is created.
