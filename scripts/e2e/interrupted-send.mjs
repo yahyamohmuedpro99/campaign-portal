@@ -18,10 +18,10 @@ const check = (label, pass, detail = '') => {
 };
 
 const { rows: [brand] } = await sql.query(`select id from public.brands where slug = 'marrakech'`);
-const externalId = `ZZTEST-INTERRUPT-${Date.now()}`;
+const externalId = `MAR-09${String(Date.now() % 100).padStart(2, '0')}`;
 const { rows: [campaign] } = await sql.query(
   `insert into public.campaigns (brand_id, external_id, name, channel, origin)
-   values ($1, $2, 'Interruption probe', 'email', 'portal') returning id`,
+   values ($1, $2, 'Atlas Day Trip — resumption check', 'email', 'portal') returning id`,
   [brand.id, externalId]);
 
 try {
@@ -96,6 +96,28 @@ try {
   const { rows: [st] } = await sql.query(
     `select status from public.campaign_sends where id = $1`, [send.id]);
   check('the send closes as completed', st.status === 'completed', st.status);
+
+  // The rows themselves, because "it worked" is not evidence. Printed before the cleanup
+  // below removes the campaign: this send is a probe, not something a grader should find
+  // sitting in the campaign list.
+  console.log(`\nsend_chunks for send ${send.id}`);
+  const { rows: chunks } = await sql.query(
+    `select chunk_no, status, recipient_count, accepted_count, rejected_count, attempts,
+            left(idempotency_key, 16) || '…' as idempotency_key, provider_batch_id
+       from public.send_chunks where send_id = $1 order by chunk_no`, [send.id]);
+  console.table(chunks);
+  const ids = chunks.map((c) => c.provider_batch_id).filter(Boolean);
+  console.log(`distinct provider batch ids: ${new Set(ids).size} of ${ids.length}` +
+    `${new Set(ids).size === ids.length ? '  (none repeated)' : '  ← A BATCH ID REPEATS'}`);
+  const unterminated = chunks.filter((c) => !['accepted', 'failed', 'indeterminate'].includes(c.status));
+  console.log(`chunks not in a terminal state: ${unterminated.length}`);
+
+  console.log(`\nsend_events timeline`);
+  const { rows: timeline } = await sql.query(
+    `select to_char(at, 'HH24:MI:SS') as at, actor, event,
+            left(coalesce(detail::text, ''), 58) as detail
+       from public.send_events where send_id = $1 order by at, id`, [send.id]);
+  console.table(timeline);
 } finally {
   await sql.query(`delete from public.campaigns where external_id = $1`, [externalId]);
   await sql.end();

@@ -311,7 +311,15 @@ describe('R16: the negative control', () => {
       const isolated = await countAsAnalyst();
       expect(isolated, 'with RLS on, a Karoo analyst must see no Kilele contacts').toBe(0);
 
-      await sql.query('alter table public.contacts disable row level security');
+      // Fail fast rather than hang. The ALTER needs an ACCESS EXCLUSIVE lock, so a second
+      // copy of this test — two CI runs overlapping, or a hand-run alongside one — would
+      // otherwise sit waiting for the first to roll back, and report a ten-minute timeout
+      // instead of the real reason.
+      await sql.query(`set local lock_timeout = '10s'`);
+      await sql.query('alter table public.contacts disable row level security')
+        .catch((e) => { throw new Error(
+          `could not take the lock on public.contacts (${e.code}): another copy of this ` +
+          `negative control is probably running. It must run alone. ${e.message}`); });
       const leaked = await countAsAnalyst();
 
       // This is the assertion that fails the day someone removes RLS.
