@@ -155,7 +155,8 @@ export function ShareManager({ slug, campaignId, campaignName, isOwner, hasSend,
                         <Button size="sm" variant="ghost" className="text-destructive"
                                 onClick={async () => {
                                   const r = await revokeShare(s.id, slug, campaignId);
-                                  r.ok ? toast.success('Link revoked') : toast.error(r.error);
+                                  if (r.ok) toast.success('Link revoked');
+                                  else toast.error(r.error);
                                 }}>
                           Revoke
                         </Button>

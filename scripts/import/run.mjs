@@ -20,7 +20,7 @@ import { createHash } from 'node:crypto';
 import { parse } from 'csv-parse';
 import {
   normConsent, normStatus, normEmail, normCountry, normPhone, normTimestamp,
-  normEventType, normNumber, isBlank,
+  normEventType, normNumber,
 } from './normalize.mjs';
 import { BRAND_REGION } from './profiles.mjs';
 
@@ -159,7 +159,7 @@ async function importContacts(ctx) {
          updated_at = now()
        returning (xmax = 0) as was_inserted`,
       params);
-    for (const r of res) r.was_inserted ? inserted++ : updated++;
+    for (const r of res) { if (r.was_inserted) inserted++; else updated++; }
   };
 
   for await (let { rowNo, row } of readRows(path, profile)) {
@@ -298,7 +298,7 @@ async function importCampaigns(ctx) {
       [brandId, r.external_id, r.name, r.channel, r.target_country, r.reported_sent,
        r.reported_delivered, r.reported_bounced, r.reported_opens, r.reported_clicks,
        r.spend, r.sent_at, r.send_local_time, r.parent_campaign_external_id, r.imported_status]);
-    rows[0].was_inserted ? inserted++ : updated++;
+    if (rows[0].was_inserted) inserted++; else updated++;
   }
   return { read, inserted, updated };
 }
@@ -464,7 +464,7 @@ async function importSendLog(ctx) {
          status = excluded.status
        returning (xmax = 0) as was_inserted`,
       [brandId, r.batch_key, r.campaign_id, r.campaign_ref, r.queued_at, r.recipient_count, r.status]);
-    rows[0].was_inserted ? inserted++ : updated++;
+    if (rows[0].was_inserted) inserted++; else updated++;
   }
   return { read, inserted, updated };
 }

@@ -84,7 +84,7 @@ export default async function SendPage({ params }: {
                   rule={DEFINITIONS.openRate.rule} note={DEFINITIONS.openRate.note} />
       </div>
 
-      <SendProgress sendId={sendId} slug={slug} isOwner={brand.role === 'owner'}
+      <SendProgress sendId={sendId} isOwner={brand.role === 'owner'}
                     isTerminal={isTerminal} chunks={chunkRows} lastPolled={lastPolled}
                     approved={send.approved_count} timezone={brand.timezone} />
 

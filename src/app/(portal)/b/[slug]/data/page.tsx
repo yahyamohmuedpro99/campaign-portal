@@ -1,7 +1,6 @@
 import { requireMembership } from '@/lib/brand';
 import { createClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/portal/page-header';
-import { Badge } from '@/components/ui/badge';
 import { IMPORT_RULES, REJECT_REASONS, WARNING_REASONS } from '@/lib/definitions';
 import { ImportRunCard } from '@/components/portal/import-run-card';
 

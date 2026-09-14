@@ -22,8 +22,8 @@ import type pg from 'pg';
 
 let sql: pg.Client;
 let kileleOwner: SupabaseClient, karooAnalyst: SupabaseClient;
-let brand: Record<string, string> = {};
-let userId: Record<string, string> = {};
+const brand: Record<string, string> = {};
+const userId: Record<string, string> = {};
 
 /** Contacts planted in two brands under the SAME external_id, mirroring the 12,406 ids
  *  the real exports share between Kilele and Karoo. */

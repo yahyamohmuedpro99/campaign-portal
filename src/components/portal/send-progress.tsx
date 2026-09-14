@@ -33,8 +33,8 @@ const STATUS_TONE: Record<string, string> = {
  * mid-flight. Pressing "Continue" again is harmless, because only one dispatcher can hold
  * a send at a time and each batch is claimed exactly once.
  */
-export function SendProgress({ sendId, slug, isOwner, isTerminal, chunks, lastPolled, approved, timezone }: {
-  sendId: string; slug: string; isOwner: boolean; isTerminal: boolean;
+export function SendProgress({ sendId, isOwner, isTerminal, chunks, lastPolled, approved, timezone }: {
+  sendId: string; isOwner: boolean; isTerminal: boolean;
   chunks: Chunk[]; lastPolled: string | null; approved: number; timezone: string;
 }) {
   const router = useRouter();
@@ -66,7 +66,6 @@ export function SendProgress({ sendId, slug, isOwner, isTerminal, chunks, lastPo
   async function refresh() {
     setBusy('refresh');
     try {
-      const supabase = createClient();
       // Reading the reports is a privileged action, so it goes through the server route
       // rather than the browser talking to the provider, which CORS would block anyway.
       const res = await fetch(`/api/sends/${sendId}/sync`, { method: 'POST' });
@@ -76,7 +75,6 @@ export function SendProgress({ sendId, slug, isOwner, isTerminal, chunks, lastPo
         ? `${body.ingested.toLocaleString()} new delivery report${body.ingested === 1 ? '' : 's'}.`
         : 'No new delivery reports yet.');
       router.refresh();
-      void supabase;
     } catch (e) {
       toast.error((e as Error).message);
     } finally { setBusy(null); }
