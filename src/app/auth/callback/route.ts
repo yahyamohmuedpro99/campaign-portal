@@ -33,6 +33,10 @@ export async function GET(request: NextRequest) {
   // sees every route return nothing, so say so plainly instead.
   const { data: memberships } = await supabase.from('brand_members').select('brand_id').limit(1);
   if (!memberships || memberships.length === 0) {
+    // Sign them straight back out. Such an account can already read nothing, because every
+    // policy is keyed to a membership it does not have, but leaving it holding a session
+    // would be untidy and confusing.
+    await supabase.auth.signOut();
     return NextResponse.redirect(`${origin}/no-access`);
   }
 

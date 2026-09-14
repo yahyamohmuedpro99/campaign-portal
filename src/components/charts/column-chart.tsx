@@ -92,13 +92,39 @@ export function ColumnChart({
           );
         })}
       </div>
+      <Axis data={data} step={step} />
+    </div>
+  );
+}
+
+/**
+ * The axis.
+ *
+ * Giving every column an equal-width label truncates each one to a single character once
+ * there are thirty of them. Beyond a handful of columns only the ends and the middle are
+ * labelled, spread across the full width, and the exact day and value live in the tooltip
+ * on each column.
+ */
+function Axis({ data, step }: { data: ColumnDatum[]; step: number }) {
+  if (data.length <= 8) {
+    return (
       <div className="flex gap-[2px] text-[10px] text-muted-foreground">
         {data.map((d, i) => (
-          <span key={`${d.label}-axis-${i}`} className="flex-1 truncate text-center">
-            {i % step === 0 ? d.label : " "}
+          <span key={`${d.label}-axis-${i}`} className="min-w-0 flex-1 truncate text-center">
+            {i % step === 0 ? d.label : "\u00a0"}
           </span>
         ))}
       </div>
+    );
+  }
+  const first = data[0]?.label;
+  const middle = data[Math.floor(data.length / 2)]?.label;
+  const last = data[data.length - 1]?.label;
+  return (
+    <div className="flex items-baseline justify-between text-[10px] text-muted-foreground">
+      <span className="whitespace-nowrap">{first}</span>
+      <span className="whitespace-nowrap">{middle}</span>
+      <span className="whitespace-nowrap">{last}</span>
     </div>
   );
 }

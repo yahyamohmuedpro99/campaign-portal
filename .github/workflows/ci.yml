@@ -96,11 +96,18 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          # Anything that would otherwise stop to ask a question fails instead. A deploy
+          # step that waits silently for input is indistinguishable from a slow build
+          # until the job times out twelve minutes later.
+          CI: "true"
+          VERCEL_CLI_VERSION: "59.16.0"
         run: |
-          npx --yes vercel@latest pull --yes --environment=production --token "$VERCEL_TOKEN"
-          npx --yes vercel@latest build --prod --token "$VERCEL_TOKEN"
-          npx --yes vercel@latest deploy --prebuilt --prod --token "$VERCEL_TOKEN" > deployment-url.txt
-          echo "Deployed: $(cat deployment-url.txt)" >> "$GITHUB_STEP_SUMMARY"
+          set -euo pipefail
+          vercel() { npx --yes "vercel@$VERCEL_CLI_VERSION" "$@" --token "$VERCEL_TOKEN" --yes; }
+          timeout 120 bash -c "$(declare -f vercel); vercel pull --environment=production"
+          timeout 600 bash -c "$(declare -f vercel); vercel build --prod"
+          timeout 300 bash -c "$(declare -f vercel); vercel deploy --prebuilt --prod" | tee deployment-url.txt
+          echo "Deployed: $(tail -1 deployment-url.txt)" >> "$GITHUB_STEP_SUMMARY"
 
       # A deployment that builds but cannot serve a page is not a deployment.
       - name: Smoke test the live site

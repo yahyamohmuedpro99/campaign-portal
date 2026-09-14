@@ -24,14 +24,14 @@ export function Waterfall({ steps, hrefFor }: {
   const max = Math.max(1, ...middle.map((s) => s.excluded));
 
   return (
-    <div className="overflow-hidden rounded-xl border bg-card">
+    <div className="min-w-0 overflow-hidden rounded-xl border bg-card">
       <Row label={total?.label ?? 'Customers on record'} value={total?.remaining ?? 0} bold />
       <div className="divide-y">
         {middle.map((s) => {
           const href = hrefFor?.(s.step_key);
           const body = (
-            <div className="flex items-center gap-3 px-4 py-2.5 text-sm">
-              <span className="tabular w-20 shrink-0 text-right text-destructive">
+            <div className="flex items-center gap-2 px-3 py-2.5 text-sm sm:gap-3 sm:px-4">
+              <span className="tabular w-16 shrink-0 text-right text-destructive sm:w-20">
                 {s.excluded > 0 ? `−${s.excluded.toLocaleString()}` : '—'}
               </span>
               <span className="min-w-0 flex-1 truncate text-muted-foreground">{s.label}</span>
@@ -39,7 +39,7 @@ export function Waterfall({ steps, hrefFor }: {
                 <span className="block h-full rounded-full bg-destructive/50"
                       style={{ width: `${Math.round((s.excluded / max) * 100)}%` }} />
               </span>
-              <span className="tabular w-24 shrink-0 text-right text-xs text-muted-foreground">
+              <span className="tabular w-16 shrink-0 text-right text-xs text-muted-foreground sm:w-24">
                 {s.remaining.toLocaleString()}
               </span>
             </div>

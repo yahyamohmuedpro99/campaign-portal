@@ -40,3 +40,6 @@ next-env.d.ts
 /.scratch/
 *.local.json
 .env*
+
+# submission notes (contain passwords; never committed)
+/SUBMISSION.md

@@ -65,7 +65,7 @@ export default async function DashboardPage({
       </div>
 
       <section className="mt-8 grid gap-6 lg:grid-cols-2">
-        <div>
+        <div className="min-w-0">
           <div className="mb-3 flex items-center gap-1.5">
             <h2 className="text-sm font-semibold">How we get to contactable</h2>
             <DefinitionNote rule={DEFINITIONS.contactable.rule} note={DEFINITIONS.contactable.note} />
@@ -77,7 +77,7 @@ export default async function DashboardPage({
           </p>
         </div>
 
-        <div>
+        <div className="min-w-0">
           <div className="mb-3 flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5">
               <h2 className="text-sm font-semibold">Signups per day</h2>
