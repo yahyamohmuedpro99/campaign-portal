@@ -114,6 +114,10 @@ jobs:
         run: |
           set -euo pipefail
           vercel() { npx --yes "vercel@$VERCEL_CLI_VERSION" "$@" --token "$VERCEL_TOKEN" --yes; }
+          # Stamp the build so the live site can say which commit it is running. CLI
+          # deploys carry no git metadata, so without this the only way to tell what is
+          # deployed is to compare timestamps and hope.
+          printf 'export const BUILD_SHA = %s;\n' "'$GITHUB_SHA'" > src/lib/build-sha.ts
           timeout 120 bash -c "$(declare -f vercel); vercel pull --environment=production"
           timeout 600 bash -c "$(declare -f vercel); vercel build --prod"
           # Vercel still runs a remote step for a prebuilt upload; it took just under

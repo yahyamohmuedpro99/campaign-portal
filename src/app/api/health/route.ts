@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { BUILD_SHA } from '@/lib/build-sha';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,6 +15,6 @@ export async function GET() {
   } catch { /* reported as unreachable */ }
 
   return NextResponse.json(
-    { status: database === 'ok' ? 'ok' : 'degraded', database, time: new Date().toISOString() },
+    { status: database === 'ok' ? 'ok' : 'degraded', database, commit: BUILD_SHA, time: new Date().toISOString() },
     { status: database === 'ok' ? 200 : 503, headers: { 'Cache-Control': 'no-store' } });
 }

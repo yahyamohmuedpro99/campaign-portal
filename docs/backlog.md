@@ -39,3 +39,15 @@ Things found and consciously not done, with what it would take.
 - Contact detail pages, so a name on the exclusion list can be opened.
 - Dark-mode review. The tokens are defined for both themes but only light has been looked
   at closely.
+
+## Open operational issues
+
+- **Vercel has disabled the project.** After roughly eight production deploys in an hour
+  on the Hobby plan, `GET /v9/projects/{id}` reports `live: false` and every new
+  deployment comes back `readyState: BLOCKED`. It did not clear after ten hours, so it is
+  not a timed rate limit. The live site is unaffected — the alias still serves the last
+  good build — but nothing new can ship until the project is re-enabled from the Vercel
+  dashboard. Each push to `main` adds another blocked deployment, so hold pushes until it
+  is cleared.
+- **Google sign-in needs its OAuth client.** Everything else is done and applied; see
+  `docs/google-sign-in-setup.md`.
