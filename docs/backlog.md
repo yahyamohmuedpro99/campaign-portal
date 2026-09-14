@@ -42,12 +42,21 @@ Things found and consciously not done, with what it would take.
 
 ## Open operational issues
 
-- **Vercel has disabled the project.** After roughly eight production deploys in an hour
-  on the Hobby plan, `GET /v9/projects/{id}` reports `live: false` and every new
-  deployment comes back `readyState: BLOCKED`. It did not clear after ten hours, so it is
-  not a timed rate limit. The live site is unaffected — the alias still serves the last
-  good build — but nothing new can ship until the project is re-enabled from the Vercel
-  dashboard. Each push to `main` adds another blocked deployment, so hold pushes until it
-  is cleared.
+- **Vercel blocked deployments on the commit author, and it was misread twice.** Every
+  deployment after the first came back `readyState: BLOCKED`. It looked like free-tier
+  rate limiting, then like a disabled project (`GET /v9/projects/{id}` reports
+  `live: false`). Both readings were wrong. The dashboard states the real reason: *"the
+  commit author did not have contributing access to the project on Vercel. The Hobby Plan
+  does not support collaboration for private repositories."*
+
+  The commits were authored by a git identity other than the account holder; the Vercel account is
+  `yahyamohmuedpro99 <yahyamohmuedpro99@gmail.com>`. Vercel reads the author out of the
+  git metadata the CLI attaches and, on Hobby with a private repository, refuses anyone
+  who is not the account holder. The repository identity is now the personal address, so
+  new commits deploy.
+
+  Two lessons worth keeping: `readyState: BLOCKED` carries no reason through the API or
+  the CLI — only the dashboard says why — and a Hobby deployment is tied to *who wrote the
+  commit*, not to who ran the deploy.
 - **Google sign-in needs its OAuth client.** Everything else is done and applied; see
   `docs/google-sign-in-setup.md`.
