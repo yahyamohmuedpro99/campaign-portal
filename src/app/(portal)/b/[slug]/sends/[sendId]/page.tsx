@@ -94,7 +94,13 @@ export default async function SendPage({ params }: {
 
       <section className="mt-8 grid gap-6 lg:grid-cols-2">
         <div>
-          <h2 className="mb-3 text-sm font-semibold">Where each person stands</h2>
+          <h2 className="mb-1 text-sm font-semibold">Where each person stands</h2>
+          <p className="mb-3 text-xs text-muted-foreground">
+            One row per person, showing their <span className="font-medium">final</span> outcome,
+            so these add up to everyone the send went to. Someone whose message was
+            delivered and who then unsubscribed appears once, under unsubscribed, which is
+            why this reads lower than the delivered total above.
+          </p>
           <div className="overflow-hidden rounded-xl border bg-card">
             <table className="w-full text-sm">
               <tbody className="divide-y">
