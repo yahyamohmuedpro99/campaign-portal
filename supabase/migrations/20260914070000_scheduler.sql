@@ -11,7 +11,7 @@
 -- =====================================================================================
 
 create extension if not exists pg_cron;
-create extension if not exists pg_net with schema extensions;
+create extension if not exists pg_net;
 
 create or replace function private.tick_delivery_reports()
 returns bigint
@@ -36,7 +36,7 @@ begin
 
   -- Fire and forget: pg_net queues the request and returns immediately, so a slow or
   -- unreachable endpoint can never hold a database connection open.
-  select extensions.net_http_post(
+  select net.http_post(
     url     := v_url,
     headers := jsonb_build_object('Content-Type', 'application/json',
                                   'Authorization', 'Bearer ' || v_secret),

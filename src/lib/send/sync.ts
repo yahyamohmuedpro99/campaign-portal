@@ -1,7 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { fetchEvents } from '@/lib/provider/client';
 
-export type SyncOutcome = { chunks: number; pages: number; ingested: number; duplicates: number };
+export type SyncOutcome = { chunks: number; pages: number; ingested: number; duplicates: number; unattributable: number };
 
 /**
  * Pulls delivery reports for whichever chunks are due.
@@ -21,7 +21,7 @@ export async function syncDeliveryReports(opts: {
   const budgetMs = opts.budgetMs ?? 120_000;
   const maxPages = opts.maxPagesPerChunk ?? 20;
   const startedAt = Date.now();
-  const out: SyncOutcome = { chunks: 0, pages: 0, ingested: 0, duplicates: 0 };
+  const out: SyncOutcome = { chunks: 0, pages: 0, ingested: 0, duplicates: 0, unattributable: 0 };
 
   let due: { chunk_id: string; provider_batch_id: string; events_cursor: string | null }[] = [];
   if (opts.chunkIds?.length) {
@@ -63,6 +63,7 @@ export async function syncDeliveryReports(opts: {
       const row = Array.isArray(data) ? data[0] : data;
       out.ingested += row?.ingested ?? 0;
       out.duplicates += row?.duplicates ?? 0;
+      out.unattributable += row?.unattributable ?? 0;
 
       // A null next_cursor means the stream has nothing further right now. Keeping the
       // previous cursor is deliberate: storing null would replay from the beginning.

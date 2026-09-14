@@ -41,6 +41,8 @@ export default async function SendPage({ params }: {
     a[k] = (a[k] ?? 0) + 1; return a;
   }, {});
 
+  const { data: orphans } = await supabase.rpc('send_unattributable_events', { p_send_id: sendId });
+
   const { data: deliverability } = await supabase
     .from('send_recipients')
     .select('delivered_at, bounced_at, opened_at, unsubscribed_at, complained_at')
@@ -100,6 +102,20 @@ export default async function SendPage({ params }: {
                     <td className="tabular px-4 py-2 text-right font-medium">{fmt(v)}</td>
                   </tr>
                 ))}
+                {((orphans ?? []) as { event_type: string; events: number }[]).length > 0 && (
+                  <tr className="bg-warning/5">
+                    <td colSpan={2} className="px-4 py-2 text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground">
+                        {((orphans ?? []) as { events: number }[]).reduce((a, o) => a + Number(o.events), 0)} report
+                        {' '}could not be matched to anyone in this send.
+                      </span>{' '}
+                      The provider builds event identifiers from a short prefix of the batch
+                      reference, so batches collide and one batch&rsquo;s page can carry
+                      another&rsquo;s reports. They are kept and counted here rather than
+                      discarded, and they are not added to any figure above.
+                    </td>
+                  </tr>
+                )}
                 {(d.unsubscribed > 0 || d.complained > 0) && (
                   <tr className="bg-muted/30">
                     <td className="px-4 py-2 text-xs text-muted-foreground">
