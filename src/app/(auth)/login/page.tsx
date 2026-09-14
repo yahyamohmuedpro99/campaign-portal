@@ -2,8 +2,38 @@ import { Suspense } from 'react';
 import { LoginForm } from './login-form';
 
 export const metadata = { title: 'Sign in · Campaign Portal' };
+export const dynamic = 'force-dynamic';
 
-export default function LoginPage() {
+/**
+ * Whether the auth server will actually accept a Google sign-in.
+ *
+ * `signInWithOAuth` cannot answer this: it builds the authorisation URL in the browser
+ * without contacting anything, so it returns success even for a provider that is switched
+ * off, and the browser then lands on the auth server's raw JSON error. The only party that
+ * knows is the auth server, and it will say so on a public endpoint.
+ *
+ * Null means the question could not be answered here — a timeout or a bad response. That
+ * is deliberately not the same as "no": hiding a working sign-in method because of a blip
+ * would be its own bug, so the button stays and asks again from the browser before it
+ * sends anyone anywhere.
+ */
+async function googleIsEnabled(): Promise<boolean | null> {
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/settings`, {
+      headers: { apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY! },
+      cache: 'no-store',
+      signal: AbortSignal.timeout(4000),
+    });
+    if (!res.ok) return null;
+    const settings = await res.json();
+    return settings?.external?.google === true;
+  } catch {
+    return null;
+  }
+}
+
+export default async function LoginPage() {
+  const googleEnabled = await googleIsEnabled();
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm">
@@ -18,7 +48,7 @@ export default function LoginPage() {
           <p className="mt-1 text-sm text-muted-foreground">Sign in to your brand’s workspace.</p>
         </div>
         <Suspense>
-          <LoginForm />
+          <LoginForm googleEnabled={googleEnabled} />
         </Suspense>
       </div>
     </main>

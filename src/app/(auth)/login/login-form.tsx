@@ -17,33 +17,73 @@ const OAUTH_MESSAGES: Record<string, string> = {
   provider_email_needs_verification: 'Google has not verified the email address on that account.',
 };
 
-export function LoginForm() {
+export function LoginForm({ googleEnabled }: { googleEnabled: boolean | null }) {
   const params = useSearchParams();
   const [state, action, pending] = useActionState<LoginState, FormData>(signInWithPassword, {});
   const [googlePending, setGooglePending] = useState(false);
+  const [googleError, setGoogleError] = useState<string | null>(null);
   const oauthError = params.get('error');
 
   async function signInWithGoogle() {
     setGooglePending(true);
+    setGoogleError(null);
     const supabase = createClient();
     const next = params.get('next');
-    const { error } = await supabase.auth.signInWithOAuth({
+
+    // Refuse the trip if the auth server has already said it will not honour it. This
+    // cannot be discovered from the call below: signInWithOAuth assembles the URL in the
+    // browser without asking anything, so it reports success for a provider that is
+    // switched off and the browser lands on the auth server's raw JSON error instead of a
+    // sign-in page. The page asked the auth server on the way in; that answer is here.
+    const unavailable = () => {
+      setGooglePending(false);
+      setGoogleError('Google sign-in is not switched on for this portal yet. Use your email and password below.');
+    };
+
+    if (googleEnabled === false) return unavailable();
+
+    // The page could not reach the auth server on the way in, so ask now. One request,
+    // and only on the rare path where the answer is genuinely unknown — better than
+    // sending someone to a page that will greet them with a JSON error.
+    if (googleEnabled === null) {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/settings`, {
+          headers: { apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY! },
+          signal: AbortSignal.timeout(4000),
+        });
+        if (!res.ok || (await res.json())?.external?.google !== true) return unavailable();
+      } catch {
+        setGooglePending(false);
+        setGoogleError('We could not reach the sign-in service. Please try again, or use your email and password.');
+        return;
+      }
+    }
+
+    // Hold the redirect so a failure is still ours to render rather than the browser's.
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/auth/callback${next ? `?next=${encodeURIComponent(next)}` : ''}`,
         queryParams: { prompt: 'select_account' },
+        skipBrowserRedirect: true,
       },
     });
-    if (error) setGooglePending(false);
+
+    if (error || !data?.url) {
+      setGooglePending(false);
+      setGoogleError('We could not start a Google sign-in. Please try again, or use your email and password.');
+      return;
+    }
+    window.location.assign(data.url);
   }
 
   return (
     <div className="rounded-xl border bg-card p-6 shadow-sm">
-      {(state.error || oauthError) && (
+      {(state.error || oauthError || googleError) && (
         <Alert variant="destructive" className="mb-4">
           <AlertCircle className="size-4" />
           <AlertDescription>
-            {state.error ?? OAUTH_MESSAGES[oauthError!] ?? 'Sign-in failed.'}
+            {state.error ?? googleError ?? OAUTH_MESSAGES[oauthError!] ?? 'Sign-in failed.'}
           </AlertDescription>
         </Alert>
       )}
