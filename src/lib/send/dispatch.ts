@@ -80,7 +80,9 @@ export async function dispatchSend(sendId: string, opts: {
         p_send_id: sendId, p_worker: worker,
       });
       if (claimErr) throw new Error(`claim: ${claimErr.message}`);
-      if (!chunk) break;
+      // A composite return with no row arrives as an object whose every field is null,
+      // so the presence of an id is what actually means "we claimed something".
+      if (!chunk?.id) break;
       out.claimed++;
 
       const { data: recipients, error: recErr } = await db
