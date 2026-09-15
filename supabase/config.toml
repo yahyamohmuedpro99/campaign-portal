@@ -31,12 +31,10 @@ uri = "pg-functions://postgres/public/restrict_signup_to_invited"
 
 # Google sign-in.
 #
-# Uncomment once GOOGLE_CLIENT_ID and GOOGLE_SECRET are in .env, then `supabase config
-# push`. The secrets are read from .env at push time and are never written into this file,
-# which is committed. Creating the OAuth client is the one step that has to happen in a web
+# The secrets are read from .env at push time and are never written into this file, which
+# is committed. Creating the OAuth client was the one step that had to happen in a web
 # console — see docs/google-sign-in-setup.md.
-#
-# [auth.external.google]
-# enabled = true
-# client_id = "env(GOOGLE_CLIENT_ID)"
-# secret = "env(GOOGLE_SECRET)"
+[auth.external.google]
+enabled = true
+client_id = "env(GOOGLE_CLIENT_ID)"
+secret = "env(GOOGLE_SECRET)"

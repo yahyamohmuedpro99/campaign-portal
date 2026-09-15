@@ -23,7 +23,11 @@ const page = await browser.newPage();
 const authorize = [];
 page.on('request', (r) => { if (/\/auth\/v1\/authorize/.test(r.url())) authorize.push(r.url()); });
 
-await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
+// Wait for the page to be interactive, not merely parsed. Clicking a React button before
+// hydration does nothing at all, which looks exactly like a button that refuses to act —
+// an earlier version of this script failed a working sign-in that way.
+await page.goto(`${BASE}/login`, { waitUntil: 'networkidle' });
+await page.locator('button', { hasText: 'Continue with Google' }).waitFor({ state: 'visible' });
 const settings = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/settings`,
   { headers: { apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY } }).then((r) => r.json());
 const enabled = settings?.external?.google === true;

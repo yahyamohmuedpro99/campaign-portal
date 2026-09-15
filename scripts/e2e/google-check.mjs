@@ -45,17 +45,18 @@ if (location.startsWith('https://accounts.google.com')) {
   const q = new URL(location).searchParams;
   console.log(`         client id ends …${(q.get('client_id') ?? '').slice(-14)}`);
   console.log(`         redirect uri  ${q.get('redirect_uri')}`);
-  // Google hands the browser back to Supabase, which then hands it to whatever was asked
-  // for in redirect_to — but only if that URL is on the project's allow list. When it is
-  // not, the person lands on the site URL instead, which is how a sign-in on the live
-  // site ends up on somebody's laptop.
-  const state = q.get('state') ?? '';
-  const payload = JSON.parse(Buffer.from(state.split('.')[1] ?? '', 'base64url').toString() || '{}');
-  const wanted = `${app}/auth/callback`;
-  check('it will come back to this app, not somewhere else',
-        (payload.site_url ?? payload.referrer ?? '') === wanted,
-        payload.site_url ?? payload.referrer ?? 'not in the state token');
+  check('Google will hand the browser back to Supabase',
+        q.get('redirect_uri') === `${url}/auth/v1/callback`, q.get('redirect_uri') ?? 'missing');
 }
+
+// What is deliberately NOT asserted here: that Supabase then forwards the browser to this
+// app rather than to its site_url. The allow-list is declared in supabase/config.toml and
+// `supabase config diff` reports whether the project still matches it, but the auth server
+// does not apply it at /authorize — every redirect_to, allow-listed or not, is answered
+// with a redirect to Google, and the check happens on the way back. An earlier version of
+// this script claimed to verify it by decoding the state token; the token carries no such
+// claim, so that check was reading an empty object and asserting against nothing. The
+// return trip is proved by signing in, which is the last line below.
 
 console.log(problems === 0
   ? '\nGoogle sign-in is live and the portal is invite-only. Try it with both Kilele accounts.'
