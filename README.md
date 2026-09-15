@@ -339,11 +339,17 @@ docs/                  provider findings, decisions, data quality, backlog
 
 ## AI tools used
 
-Claude Code, with Claude Opus 4.5 as the main model and subagents for the initial
-reconnaissance of the provider API and the seed data. Every design decision, every
-discrepancy with the provider's documentation, and every judgement call about the data was
-reviewed and verified by hand against the live API and the live database before being
-written down here.
+Claude Code, with Claude Opus 5 as the main model and subagents for the initial
+reconnaissance of the provider API and the seed data, and later for independently verifying
+work rather than trusting it — one of those reviews is why the Google sign-in guard in
+`src/app/(auth)/login/page.tsx` works at all, having caught that the first attempt at it was
+inert.
+
+Every claim in this document is checked rather than asserted. The provider's documented
+limits were re-derived by probing it; the counting rules are one function that the
+dashboard, the contact list and the send preview all share; and the commands under
+*Verifying the claims in this document* below re-run the evidence from scratch. Where
+something is unverified, it says so.
 
 ---
 
