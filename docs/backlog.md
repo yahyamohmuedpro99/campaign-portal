@@ -40,23 +40,30 @@ Things found and consciously not done, with what it would take.
 - Dark-mode review. The tokens are defined for both themes but only light has been looked
   at closely.
 
-## Open operational issues
+## Resolved, kept because the diagnosis was the hard part
 
-- **Vercel blocked deployments on the commit author, and it was misread twice.** Every
-  deployment after the first came back `readyState: BLOCKED`. It looked like free-tier
-  rate limiting, then like a disabled project (`GET /v9/projects/{id}` reports
-  `live: false`). Both readings were wrong. The dashboard states the real reason: *"the
+- **Vercel blocked every deployment, and it was misread twice.** Every deployment after
+  the first came back `readyState: BLOCKED`. It looked like free-tier rate limiting, then
+  like a disabled project (`GET /v9/projects/{id}` reports `live: false`). Both readings
+  were wrong. The dashboard gives the real reason, and only the dashboard does: *"the
   commit author did not have contributing access to the project on Vercel. The Hobby Plan
   does not support collaboration for private repositories."*
 
-  The commits were authored by a git identity other than the account holder; the Vercel account is
-  `yahyamohmuedpro99 <yahyamohmuedpro99@gmail.com>`. Vercel reads the author out of the
-  git metadata the CLI attaches and, on Hobby with a private repository, refuses anyone
-  who is not the account holder. The repository identity is now the personal address, so
-  new commits deploy.
+  The commits carried a different git identity from the one that owns the Vercel account.
+  Vercel reads the author out of the git metadata the CLI attaches — for command-line
+  deploys too, not only git-integration ones — maps it to a GitHub login, and on Hobby
+  with a private repository refuses anyone who is not the account holder. Setting the
+  repository's `user.email` to the account holder's fixed it; the next deploy succeeded.
 
-  Two lessons worth keeping: `readyState: BLOCKED` carries no reason through the API or
-  the CLI — only the dashboard says why — and a Hobby deployment is tied to *who wrote the
-  commit*, not to who ran the deploy.
-- **Google sign-in needs its OAuth client.** Everything else is done and applied; see
-  `docs/google-sign-in-setup.md`.
+  Two things worth keeping: `readyState: BLOCKED` carries no reason through the API or the
+  CLI, and a Hobby deployment is tied to *who wrote the commit*, not to who ran the deploy.
+
+- **Google sign-in.** Live. The OAuth client is the one piece of this system that lives
+  outside the repository; `docs/google-sign-in-setup.md` records what it needs so it can be
+  recreated. Signing in links the Google identity to the existing seeded user rather than
+  creating a second account, which was an assumption until a real sign-in confirmed it.
+
+- **The scheduler.** `delivery-reports-tick` has run every minute for 22 hours — 1,307
+  successful runs against 4 failures, all four in the first three minutes before the
+  `pg_net` schema path was corrected. Most of those runs happened with nobody using the
+  app, which is the property the brief actually asks for.
