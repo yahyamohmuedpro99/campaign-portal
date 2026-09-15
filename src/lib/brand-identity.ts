@@ -16,8 +16,10 @@ export type BrandIdentity = { light: string; dark: string; place: string };
 export const BRAND_IDENTITY: Record<string, BrandIdentity> = {
   // Kenyan highland green.
   kilele: { light: 'oklch(0.47 0.10 158)', dark: 'oklch(0.74 0.115 158)', place: 'Kenya' },
-  // The clay of the Karoo.
-  karoo: { light: 'oklch(0.49 0.115 48)', dark: 'oklch(0.76 0.115 58)', place: 'South Africa' },
+  // The Karoo's burnt earth. Deliberately darker and browner than it first was: the
+  // subtraction column in the contactability manifest is a brick red, and a clay this
+  // close to it made the brand colour and "this is a deduction" read as the same signal.
+  karoo: { light: 'oklch(0.42 0.072 62)', dark: 'oklch(0.74 0.082 68)', place: 'South Africa' },
   // Majorelle blue, which is Marrakech's own.
   marrakech: { light: 'oklch(0.46 0.145 265)', dark: 'oklch(0.75 0.115 265)', place: 'Morocco' },
 };
