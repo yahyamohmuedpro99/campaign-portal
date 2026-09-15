@@ -1,6 +1,8 @@
-# Enabling Google sign-in
+# Google sign-in
 
-One step, in one web console, about five minutes. Everything else is already done.
+**Done — Google sign-in is live.** This is the record of what was needed, kept because the
+OAuth client is the one piece that lives outside this repository and would have to be
+recreated if the Google project were ever lost.
 
 Use the **personal** Google account, `yahyamohmuedpro99@gmail.com`, not a work account.
 
