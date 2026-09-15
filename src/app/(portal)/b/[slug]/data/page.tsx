@@ -119,7 +119,7 @@ function Tile({ label, value, sub, tone }: {
 }) {
   return (
     <div className="rounded-xl border bg-card p-4">
-      <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="text-[13px] text-muted-foreground">{label}</div>
       <div className={`tabular mt-2 text-2xl font-semibold tracking-tight ${
         tone === 'destructive' ? 'text-destructive' : tone === 'warning' ? 'text-warning' : ''}`}>
         {value}

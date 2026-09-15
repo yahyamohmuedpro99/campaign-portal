@@ -18,7 +18,7 @@ import { ChartEmpty, type BarTone } from "./bar-row";
  */
 
 const TONE_CLASS: Record<BarTone, string> = {
-  primary: "bg-primary/70 group-hover:bg-primary",
+  primary: "bg-brand/65 group-hover:bg-brand",
   danger: "bg-danger-fill",
   warning: "bg-warning-fill",
   success: "bg-success-fill",
@@ -74,7 +74,7 @@ export function ColumnChart({
                 <div className="group flex h-full flex-1 cursor-default items-end">
                   <div
                     className={cn(
-                      "w-full rounded-t-[2px] transition-colors",
+                      "w-full transition-colors",
                       TONE_CLASS[d.tone ?? tone],
                     )}
                     style={{ height: `${pct}%` }}

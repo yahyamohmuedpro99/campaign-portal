@@ -1,10 +1,23 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Archivo } from 'next/font/google';
 import { Toaster } from '@/components/ui/sonner';
 import './globals.css';
 
-const sans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
-const mono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] });
+/**
+ * One family, doing every job.
+ *
+ * Archivo is a grotesque drawn for signage: tight apertures, a strong lining figure set,
+ * and enough weight range that display, interface and data can be told apart by weight and
+ * size rather than by introducing a second typeface. A portal whose content is almost
+ * entirely numbers needs figures that line up and hold at small sizes more than it needs a
+ * display face.
+ */
+const archivo = Archivo({
+  variable: '--font-archivo',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'Campaign Portal',
@@ -14,7 +27,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${sans.variable} ${mono.variable} antialiased`}>
+      <body className={`${archivo.variable} antialiased`}>
         {children}
         <Toaster />
       </body>

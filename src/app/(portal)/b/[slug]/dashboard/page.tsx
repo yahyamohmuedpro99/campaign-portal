@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { requireMembership } from '@/lib/brand';
 import { createClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/portal/page-header';
-import { StatCard } from '@/components/portal/stat-card';
+import { StatCard, StatStrip } from '@/components/portal/stat-card';
 import { Waterfall, type WaterfallStep } from '@/components/portal/waterfall';
 import { ColumnChart } from '@/components/charts';
 import { DefinitionNote } from '@/components/portal/definition-note';
@@ -49,20 +49,21 @@ export default async function DashboardPage({
         description={<>Everything on this page counts only {brand.name}’s own data. Hover any <span className="font-medium">i</span> to see exactly how a figure was counted.</>}
       />
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      {/* Contactable leads: it is the figure every other decision on this page hangs off. */}
+      <StatStrip>
+        <StatCard lead label="Contactable" value={fmt(t.contactable)}
+                  sub={`${Math.round((t.contactable / Math.max(1, t.total_customers)) * 100)}% of customers`}
+                  rule={DEFINITIONS.contactable.rule} note={DEFINITIONS.contactable.note} />
         <StatCard label="Total customers" value={fmt(t.total_customers)}
                   sub={t.soft_deleted > 0 ? `${fmt(t.soft_deleted)} removed at source, excluded` : 'None removed at source'}
                   rule={DEFINITIONS.totalCustomers.rule} note={DEFINITIONS.totalCustomers.note} />
-        <StatCard label="Contactable" value={fmt(t.contactable)}
-                  sub={`${Math.round((t.contactable / Math.max(1, t.total_customers)) * 100)}% of customers`}
-                  rule={DEFINITIONS.contactable.rule} note={DEFINITIONS.contactable.note} />
         <StatCard label="Reachable by email" value={fmt(t.email_reachable)}
                   sub="Contactable and holding a valid address"
                   rule={DEFINITIONS.audience.rule} note={DEFINITIONS.audience.note} />
         <StatCard label="Reachable by SMS" value={fmt(t.sms_reachable)}
                   sub="Contactable and holding a valid mobile"
                   rule={DEFINITIONS.audience.rule} note={DEFINITIONS.audience.note} />
-      </div>
+      </StatStrip>
 
       <section className="mt-8 grid gap-6 lg:grid-cols-2">
         <div className="min-w-0">

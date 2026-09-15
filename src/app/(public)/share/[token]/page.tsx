@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { tokenHashHex, readShareSession, shareCookieName } from '@/lib/share/tokens';
 import { UnlockForm } from './unlock-form';
+import { brandStyleByName } from '@/lib/brand-identity';
 
 // Never cached, never prerendered, never handed to a CDN. A cached copy of a protected
 // report is the same leak as no password at all.
@@ -47,11 +48,12 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
   const pct = (a: number, b: number) => (b > 0 ? `${Math.round((a / b) * 100)}%` : '—');
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-10 sm:py-16">
+    <main data-brand style={brandStyleByName(r.brand_name)} className="mx-auto max-w-2xl px-4 py-10 sm:py-16">
       <header className="mb-8">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {r.brand_name} · campaign results
-        </p>
+        {/* The company's own colour, so a report forwarded to a stranger still reads as
+            having come from somewhere rather than from a generic tool. */}
+        <div aria-hidden className="mb-4 h-[3px] w-12 bg-brand" />
+        <p className="text-[13px] font-medium text-foreground">{r.brand_name}</p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight">{r.campaign_name}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Sent by {r.channel}
@@ -59,9 +61,15 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
         </p>
       </header>
 
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      {/* One instrument, hairline-divided, rather than six identical floating cards.
+          Delivered leads because it is the question the report answers; the rest is the
+          context that makes it meaningful. */}
+      <section className="grid grid-cols-2 overflow-hidden rounded-lg border bg-card sm:grid-cols-3
+                          [&>*]:border-border [&>*]:border-t [&>*]:border-l
+                          [&>*:nth-child(-n+2)]:border-t-0 sm:[&>*:nth-child(3)]:border-t-0
+                          [&>*:nth-child(odd)]:border-l-0 sm:[&>*]:border-l sm:[&>*:nth-child(3n+1)]:border-l-0">
+        <Tile lead label="Delivered" value={fmt(r.delivered)} sub={pct(r.delivered, r.approved) + ' of sent'} />
         <Tile label="Sent to" value={fmt(r.approved)} />
-        <Tile label="Delivered" value={fmt(r.delivered)} sub={pct(r.delivered, r.approved) + ' of sent'} />
         <Tile label="Bounced" value={fmt(r.bounced)} sub={pct(r.bounced, r.approved) + ' of sent'} />
         {r.channel === 'email' && (
           <Tile label="Opened" value={fmt(r.opened)} sub={pct(r.opened, r.delivered) + ' of delivered'} />
@@ -103,14 +111,16 @@ type Results = {
   status: string | null; last_polled_at: string | null;
 };
 
-function Tile({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function Tile({ label, value, sub, lead }: {
+  label: string; value: string; sub?: string; lead?: boolean;
+}) {
   return (
-    <div className="rounded-xl border bg-card p-4">
-      <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className="mt-1.5 text-2xl font-semibold tracking-tight" style={{ fontVariantNumeric: 'tabular-nums' }}>
+    <div className={`px-4 py-4 ${lead ? 'bg-brand/[0.05]' : ''}`}>
+      <div className="text-[13px] text-muted-foreground">{label}</div>
+      <div className={`figure mt-1.5 leading-none ${lead ? 'text-brand text-[2rem]' : 'text-2xl'}`}>
         {value}
       </div>
-      {sub && <div className="mt-0.5 text-xs text-muted-foreground">{sub}</div>}
+      {sub && <div className="mt-2 text-xs text-muted-foreground">{sub}</div>}
     </div>
   );
 }

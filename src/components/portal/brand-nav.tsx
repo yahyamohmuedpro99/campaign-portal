@@ -23,7 +23,7 @@ export function BrandNav({ slug }: { slug: string }) {
             <li key={t.href}>
               <Link href={href}
                 className={cn('inline-block whitespace-nowrap border-b-2 px-3 py-2.5 text-sm transition-colors',
-                  active ? 'border-primary font-medium text-foreground'
+                  active ? 'border-brand font-medium text-foreground'
                          : 'border-transparent text-muted-foreground hover:text-foreground')}>
                 {t.label}
               </Link>
