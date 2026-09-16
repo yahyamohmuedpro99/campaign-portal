@@ -1,5 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { createClient, getUser } from '@/lib/supabase/server';
+import { cache } from 'react';
 
 export type Membership = {
   brandId: string;
@@ -17,8 +18,11 @@ export type Membership = {
  * This decides what the interface offers, not what the data layer permits. Someone who
  * defeats it still cannot read another brand's rows, because every query underneath is
  * filtered by a row-level security policy keyed to their own membership.
+ *
+ * Memoised per request: the layout and the page both need it, and without this the same
+ * two network calls are made twice for one screen.
  */
-export async function requireMembership(slug: string): Promise<Membership> {
+export const requireMembership = cache(async (slug: string): Promise<Membership> => {
   const user = await getUser();
   if (!user) redirect('/login');
 
@@ -38,10 +42,10 @@ export async function requireMembership(slug: string): Promise<Membership> {
     country: b.country, timezone: b.timezone,
     role: data.role as 'owner' | 'analyst',
   };
-}
+});
 
 /** Every brand this user belongs to. Used to route them after signing in. */
-export async function myBrands() {
+export const myBrands = cache(async () => {
   const supabase = await createClient();
   const { data } = await supabase
     .from('brand_members')
@@ -52,4 +56,4 @@ export async function myBrands() {
     };
     return { ...b, brandId: b.id, role: m.role as 'owner' | 'analyst' };
   });
-}
+});

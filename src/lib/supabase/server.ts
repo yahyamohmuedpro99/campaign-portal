@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { cache } from 'react';
 
 /**
  * The client for anything rendered or executed on the server on behalf of a signed-in
@@ -33,10 +34,15 @@ export async function createClient() {
  *
  * Deliberately not getSession(): that reads the cookie and returns whatever it contains
  * without checking a signature, which is worthless as an authorisation input.
+ *
+ * Memoised for the life of one request. Verifying costs a round trip to the auth server,
+ * and a single page render asks several times over — the layout and the page each resolve
+ * the brand, and both start here. The check itself is not skipped; it is made once and
+ * the answer reused, which is what React's cache() is for.
  */
-export async function getUser() {
+export const getUser = cache(async () => {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getUser();
   if (error) return null;
   return data.user;
-}
+});
