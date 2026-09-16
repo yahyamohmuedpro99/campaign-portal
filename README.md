@@ -60,8 +60,8 @@ session proxy decides where people land; it does not decide what they can read.
 
 ### The test that fails if someone removes it
 
-**[`tests/rls/isolation.test.ts`](tests/rls/isolation.test.ts)** — 20 checks, run on every
-push.
+**[`tests/rls/isolation.test.ts`](tests/rls/isolation.test.ts)** — 20 checks (of the suite's
+26; the other 6 are the send pipeline), run on every push.
 
 - **R1** fails if any table in `public` has row-level security switched off.
 - **R2** fails if any table has row-level security but no policy. (Enabled with no policy
@@ -129,16 +129,22 @@ event has a status of "unsubscribed" in the export. So the dashboard shows the a
 each line clickable through to the people it removed:
 
 ```
-Customers on record          82,422
+Customers on record          82,824
+  −    402  removed from the customer list at source
   − 23,450  marketing consent not explicitly given
   −  8,014  status is not active
-  −  2,396  unsubscribed
+  −  3,694  unsubscribed
   − 11,704  reported a message as spam
-  −    618  hard bounced
+  −  2,294  hard bounced
   −    233  under a temporary suppression
   −    230  no usable email address or mobile number
-= Contactable today          35,777
+= Contactable today          32,803
 ```
+
+Those are the live figures on 16 September 2026. They fall over time, because every real
+send generates unsubscribes and bounces that the next count honours: the 35,077-person
+Kilele send on 15 September moved contactable from 35,777 to 32,803 on its own. If the
+numbers you see differ from these, that is why — the arithmetic will still close.
 
 A reader can disagree with one rule instead of distrusting the whole number.
 
@@ -296,10 +302,10 @@ pnpm dev
 Useful checks:
 
 ```bash
-pnpm test                        # 25 tests, including the isolation suite
+pnpm test                        # 26 tests: 20 isolation, 6 send pipeline
 pnpm verify:db                   # prints the live security posture
 node scripts/verify-idempotent.mjs   # re-imports everything, proves nothing changed
-node scripts/probe-provider.ts       # re-derives what the provider actually does
+node scripts/probe-provider.ts       # re-derives what the provider actually does (Node 24+)
 ```
 
 ### Deployment
@@ -358,7 +364,7 @@ something is unverified, it says so.
 Every claim above is checkable, and the checks are in the repository.
 
 ```bash
-# The 26-test suite, including the isolation regression suite and its negative control.
+# The 26-test suite: the 20-check isolation suite with its negative control, plus 6 on sending.
 pnpm test
 
 # Everything the graders said they would try: six logins, reads of another brand
@@ -381,10 +387,11 @@ node scripts/verify-idempotent.mjs
 pnpm verify:db
 
 # What the provider actually does, re-derived from scratch.
-node scripts/probe-provider.ts
+node scripts/probe-provider.ts   # Node 24+: it is TypeScript and relies on native type stripping
 ```
 
-The interrupted-send run, verbatim:
+The interrupted-send run, verbatim (the audience shrinks with every real send, so a rerun
+shows fewer recipients and batches — the latest approved 195 in 4):
 
 ```
 approved 203 recipients in 5 batches of 50
