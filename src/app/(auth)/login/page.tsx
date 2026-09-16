@@ -21,7 +21,10 @@ async function googleIsEnabled(): Promise<boolean | null> {
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/settings`, {
       headers: { apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY! },
-      cache: 'no-store',
+      // Whether a provider is configured changes about once in the life of a project, and
+      // this is the first page every visitor loads. Asking on every render bought nothing
+      // and cost a round trip to another region each time.
+      next: { revalidate: 300 },
       signal: AbortSignal.timeout(4000),
     });
     if (!res.ok) return null;
