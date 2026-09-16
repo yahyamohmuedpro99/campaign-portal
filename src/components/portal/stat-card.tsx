@@ -30,7 +30,7 @@ export function StatCard({ label, value, sub, rule, note, lead = false }: {
   lead?: boolean;
 }) {
   return (
-    <div className={cn('min-w-0 px-4 py-4 sm:px-5', lead && 'bg-brand/[0.04]')}>
+    <div data-stat={label} className={cn('min-w-0 px-4 py-4 sm:px-5', lead && 'bg-brand/[0.04]')}>
       <div className="flex items-center gap-1.5">
         <span className="truncate text-[13px] text-muted-foreground">{label}</span>
         {rule && <DefinitionNote rule={rule} note={note} />}

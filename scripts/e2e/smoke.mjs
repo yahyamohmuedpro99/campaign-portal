@@ -30,7 +30,11 @@ for (const [label, email, pwVar, expectSlug] of USERS) {
     ]);
     const url = page.url();
     await page.waitForSelector('text=Total customers', { timeout: 30000 });
-    const total = await page.locator('.tabular').first().textContent()
+    // Addressed by what it means, not where it sits. A positional selector here first
+    // reported the waterfall's opening deduction as the customer count, then the
+    // contactable figure — both silently, both plausible enough to miss.
+    const total = await page
+      .locator('[data-stat="Total customers"] .figure').first().textContent()
       .catch(() => null);
     const slugOk = url.includes(`/b/${expectSlug}/`);
     const body = await page.textContent('body');
