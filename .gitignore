@@ -43,3 +43,7 @@ next-env.d.ts
 
 # submission notes (contain passwords; never committed)
 /SUBMISSION.md
+
+# Written by `next dev` for AI coding tools; not part of the project.
+/AGENTS.md
+/CLAUDE.md
